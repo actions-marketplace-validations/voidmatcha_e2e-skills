@@ -9,9 +9,19 @@
       "default": "."
     },
     "fail-on": {
-      "description": "p0 fails on confirmed P0 findings; none reports only.",
+      "description": "p0 fails on confirmed P0; p0-candidate also fails on P0 candidates; none reports only.",
       "required": false,
       "default": "p0"
+    },
+    "fail-scope": {
+      "description": "all applies the selected policy to all findings; changed restricts it to PR-changed files.",
+      "required": false,
+      "default": "all"
+    },
+    "compare-base": {
+      "description": "Compare files against a local PR base; fail on new findings in comparable files and all findings in non-comparable files.",
+      "required": false,
+      "default": "false"
     },
     "allow-incomplete": {
       "description": "Allow unresolved analysis, visibly reported; scanner errors still fail.",
@@ -34,7 +44,7 @@
       "value": "${{ steps.scan.outputs.json-report }}"
     },
     "exit-code": {
-      "description": "Scanner exit code: 0 policy clear, 1 confirmed P0, 2 incomplete or error.",
+      "description": "Scanner exit code: 0 policy clear, 1 selected finding policy failed, 2 incomplete or error.",
       "value": "${{ steps.scan.outputs.exit-code }}"
     }
   },
@@ -48,6 +58,8 @@
           "ACTION_ROOT": "${{ github.action_path }}",
           "SCAN_PATH": "${{ inputs.path }}",
           "SCAN_FAIL_ON": "${{ inputs.fail-on }}",
+          "SCAN_FAIL_SCOPE": "${{ inputs.fail-scope }}",
+          "SCAN_COMPARE_BASE": "${{ inputs.compare-base }}",
           "SCAN_ALLOW_INCOMPLETE": "${{ inputs.allow-incomplete }}",
           "SCAN_FORMAT": "${{ inputs.format }}"
         },

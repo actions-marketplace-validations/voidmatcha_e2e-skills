@@ -11,7 +11,7 @@
   <a href="https://playwright.dev"><img alt="Playwright | Cypress" src="https://img.shields.io/badge/Playwright_%7C_Cypress-supported-2EAD33?style=flat-square&labelColor=black&logo=playwright&logoColor=white"></a>
   <a href="#merged-upstream-fixes"><img alt="Merged PRs" src="https://img.shields.io/badge/merged_PRs-15-1FC07C?style=flat-square&labelColor=black&logo=github"></a>
   <a href="https://github.com/vercel-labs/skills#supported-agents"><img alt="Runs in 55+ agents" src="https://img.shields.io/badge/runs_in-55%2B_agents-37B0E6?style=flat-square&labelColor=black"></a>
-  <a href="https://skills.sh/voidmatcha/e2e-skills"><img alt="Installs on skills.sh" src="https://img.shields.io/badge/skills.sh_installs-700%2B-1FC07C?style=flat-square&labelColor=black"></a>
+  <a href="https://www.skills.sh/voidmatcha/e2e-skills"><img alt="Installs on skills.sh" src="https://img.shields.io/badge/skills.sh_installs-900%2B-1FC07C?style=flat-square&labelColor=black"></a>
   <a href="https://www.kimi.ai/resources/software-testing-skills"><img alt="Listed in Kimi testing skills" src="https://img.shields.io/badge/%F0%9F%8E%89_listed_in-Kimi_testing_skills-8B5CF6?style=flat-square&labelColor=black"></a>
   <a href="./LICENSE"><img alt="License" src="https://img.shields.io/github/license/voidmatcha/e2e-skills?style=flat-square&labelColor=black&color=37B0E6"></a>
 </p>
@@ -20,13 +20,13 @@
 <a href="README.md">English</a> | <a href="README.ko.md">한국어</a> | <strong>日本語</strong> | <a href="README.zh-cn.md">简体中文</a>
 </p>
 
-<!-- README-CANONICAL-REVISION: sha256=578a870d14815843245f8e44d55a9eb7d2f1f38e1bb15dcf6be0123f7d632dc4; bytes=exact-README.md-UTF-8; translation-quality=not-attested -->
+<!-- README-CANONICAL-REVISION: sha256=a8d123ceddea92fa8d622d50f1f724a1dc28b56d6f8911709995bba73da1747e; bytes=exact-README.md-UTF-8; translation-quality=not-attested -->
 
 `e2e-skills` は、Claude Code、Codex などの対応 AI コーディング agent で使える、Playwright と Cypress の E2E テスト向けオープンソース skill 集です。3 つの skill で Playwright テストの生成、既存の Playwright/Cypress テストや PR のレビュー、そして製品コードを変えずに失敗中のテストを修正します。
 
-**E2E テストは成功しています。では、機能は正しく動いていますか？** 人気の React リポジトリ 200 件のうち 34 件で、名前に書かれた機能が壊れていても成功し得るテストが見つかりました。[範囲と限界](#根拠と限界) · [データ](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/770f2de79848c65b80116219ce2d03747a3ae370/raw/oss-prevalence-and-reviewer-20261106/oss-cases/summary.md)
+**E2E テストは成功しています。では、機能は正しく動いていますか？** 人気の React リポジトリ 200 件のうち 34 件で、名前に書かれた機能が壊れていても成功し得るテストが見つかりました。[範囲と限界](#evidence-and-limits) · [データ](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/770f2de79848c65b80116219ce2d03747a3ae370/raw/oss-prevalence-and-reviewer-20261106/oss-cases/summary.md)
 
-`e2e-skills` は、テストが名前どおりの動作を実際に検証しているかを確認する手助けをします。まず[インストールして試す](#インストールして試す)から始めてください。無料のメモを追加し、skill をインストールして、30 秒のスキャンを実行します。
+`e2e-skills` は、テストが名前どおりの動作を実際に検証しているかを確認する手助けをします。まず[インストールして試す](#install-and-try-it)から始めてください。無料のメモを追加し、skill をインストールして、30 秒のスキャンを実行します。
 
 <p align="center">
   <a href="https://www.kimi.ai/resources/software-testing-skills">
@@ -36,9 +36,7 @@
   <sub><a href="https://www.kimi.ai/resources/software-testing-skills">Kimi 公式サイトの「AI Software Testing Skills for Smarter QA Automation」で紹介されています。</a></sub>
 </p>
 
-`e2e-reviewer` はコードスキャナーで候補を探し、テストと周辺コードを読んで実際の問題か判断します。必要なら、検証条件の変更や元のアプリとは別のコピーへの不具合注入で、テストが失敗するかを確認する方法も提案します。追加検証はレビュー担当から提案できます。実行には信頼できるローカル環境とコマンドの承認が必要です。同じ範囲についてすでに得た承認は引き続き有効です。
-
-`e2e-reviewer` が見つけた問題の修正は [15 件のマージ済み upstream PR](#merged-upstream-fixes) につながりました。
+`e2e-reviewer` はコードスキャナーで問題候補を探し、テストと周辺コードを読んで実際の問題か判断します。[実験的なランタイム検証](#experimental-runtime-proof-opt-in)は、明示的に依頼した場合にのみ利用できます。
 
 | 必要なこと | スキル | 結果 |
 | --- | --- | --- |
@@ -110,7 +108,7 @@ test('shows the welcome message', async ({ page }) => {
 同梱スキャナーは、プロジェクト設定なしで false-green assertion を検出します。以下はテキストレポートです（`--format text` を付けない場合、同じ結果を JSON で出力します）。
 
 ```console
-$ npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills scan tests/ --format text
+$ npx --yes --package=@voidmatcha/e2e-skills-scanner@3.7.0 e2e-skills scan tests/ --format text
 Node source scan (canonical report view)
 Status: COMPLETE; confirmed P0: 2, P0 candidates: 0, unresolved locations: 0.
 Next:
@@ -136,11 +134,7 @@ Summary: 2 total hit(s), 2 P0, 0 P1/P2 heuristic, 0 LLM-triage, 0 P0 candidate; 
 
 この実行は P0 指摘を報告するため、`e2e-skills scan` は exit 1 で終了します。
 
-`eslint-plugin-playwright` も `no-unnecessary-assertions` でこの形を検出します。コミット時の lint が扱える問題を担当し、残りをスキャナーが補えるよう、このルールを有効にしてください。
-
 **実行可能な例:** [React optimistic-write の証明](examples/react-optimistic-write/README.md) は、optimistic UI には画面に見える状態だけでなく、リクエストと永続化の証明も必要な理由を示します。
-
-**講演デモ:** [Optimistic Like デモ](examples/optimistic-like-demo/README.md) は 2 つの障害を注入できる実行可能なアプリで、UI だけを確認するテストが通っても書き込みの証明にはならないことを示します。
 
 </details>
 
@@ -151,17 +145,17 @@ Summary: 2 total hit(s), 2 P0, 0 P1/P2 heuristic, 0 LLM-triage, 0 P0 candidate; 
 <td align="center" valign="top" width="50%">
 <a href="https://voidmatcha.art/talks/awskrug-e2e-2026-en"><img src="docs/assets/talk-cover-en.png" alt="成功する E2E テストを信頼できますか？" width="400" /></a>
 <p><b>成功する E2E テストを信頼できますか？</b><br />AWSKRUG Frontend Meetup</p>
-<p align="left">バグがあってもテストが成功する事例から、lint と LLM レビューを組み合わせた過程、mutation とアプリへの欠陥注入による検証方法、ベンチマーク結果、オープンソースへの貢献成果までまとめています。</p>
 <p><a href="https://voidmatcha.art/talks/awskrug-e2e-2026-en">発表資料を見る（英語）</a></p>
 </td>
 <td align="center" valign="top" width="50%">
-<a href="https://voidmatcha.art/talks/react-day-berlin-2026-en"><img src="https://voidmatcha.art/assets/green-isnt-proof-v260-thumb.jpg" alt="Green Isn’t Proof: Verifying AI-Generated React E2E Tests" width="400" /></a>
-<p><b>Green Isn’t Proof: Verifying AI-Generated React E2E Tests</b><br />React Day Berlin 2026</p>
-<p align="left">テストが成功しても、その名前が示す動作を守っている証拠にはならない理由を、マージされたオープンソースの修正事例、実行できる楽観的 UI のデモ、人と AI が書いたテストの両方に使える 3 ステップのレビュー方法で説明します。</p>
+<a href="https://voidmatcha.art/talks/react-day-berlin-2026-en"><img src="https://voidmatcha.art/assets/green-isnt-proof-v260-thumb.jpg" alt="Green Isn’t Proof" width="400" /></a>
+<p><b>Green Isn’t Proof</b><br />React Day Berlin 2026</p>
 <p><a href="https://voidmatcha.art/talks/react-day-berlin-2026-en">発表資料を見る（英語）</a></p>
 </td>
 </tr>
 </table>
+
+<a id="install-and-try-it"></a>
 
 ## インストールして試す
 
@@ -170,7 +164,7 @@ Summary: 2 total hit(s), 2 P0, 0 P1/P2 heuristic, 0 LLM-triage, 0 P0 candidate; 
 [メモの本文](docs/test-authoring-memo.md#the-memo)をプロジェクトの `AGENTS.md`（Codex）または `CLAUDE.md`（Claude Code）へコピーします。既存の指示は残してください。プロジェクトのディレクトリから CLI で追加することもできます（Node.js 22+ が必要）。`CLAUDE.md` には `--host claude`、プレビューには `--dry-run` を使います。このコマンドは skill をインストールせず、メモだけを書き込みます：
 
 ```bash
-npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills guidance --host codex --project . --memo
+npx --yes --package=@voidmatcha/e2e-skills-scanner@3.7.0 e2e-skills guidance --host codex --project . --memo
 ```
 
 ### 2. skill をインストールする
@@ -181,17 +175,17 @@ npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills guidance --h
 npx --yes skills@1.5.21 add voidmatcha/e2e-skills -g --all
 ```
 
-レビューとデバッグはすぐに使えます。テスト生成には Playwright 公式のテストエージェントと `playwright-test` MCP サーバーも必要で、プロジェクトごとに一度 `npx playwright init-agents` で設定します。[一度だけ行うプロジェクト設定](#テスト生成-一度だけ行うプロジェクト設定)を参照してください。
+レビューとデバッグはすぐに使えます。テスト生成には Playwright 公式のテストエージェントと `playwright-test` MCP サーバーも必要で、プロジェクトごとに一度 `npx playwright init-agents` で設定します。[一度だけ行うプロジェクト設定](#test-generation-one-time-project-setup)を参照してください。
 
 ### 3. テストをスキャンする
 
 一般的なテストディレクトリなら、静的スキャンは約 30 秒で終わります（Node.js 22+ が必要）：
 
 ```bash
-npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills scan tests/ --format text --fail-on p0 --allow-incomplete
+npx --yes --package=@voidmatcha/e2e-skills-scanner@3.7.0 e2e-skills scan tests/ --format text --fail-on p0 --allow-incomplete
 ```
 
-レポートの `INCOMPLETE` は一部のコードを解析できなかったという意味なので、終了コード 0 でもクリーンな結果ではありません（[用語](docs/scanner-cli.md#glossary)）。
+終了コード 0 をクリーンな結果と判断する前に、[スキャン結果と CI オプション](#standalone-scanner)を確認してください。
 
 ### 使ってみる
 
@@ -212,6 +206,8 @@ This test is failing, fix it.
 
 レビューと失敗テストの修正はすぐに動作します。テスト生成には、下記の一度だけ行うプロジェクト設定が必要です。
 
+<a id="test-generation-one-time-project-setup"></a>
+
 ### テスト生成: 一度だけ行うプロジェクト設定
 
 `playwright-test-generator` は `playwright-test` MCP サーバーを通じて Playwright 公式のテストエージェントを使います。初回の使用時にこのエージェントがなければ、生成を止めて、Playwright プロジェクトのルートで実行するコマンドを 1 つ案内します。このコマンドをスキル自身が実行することはありません。
@@ -221,34 +217,9 @@ npx --no-install playwright init-agents --loop=claude   # Claude Code
 npx --no-install playwright init-agents --loop=codex    # Codex
 ```
 
-`--no-install` はプロジェクトにインストール済みの Playwright を使い、別のバージョンをダウンロードしません。Playwright 1.62 では、このコマンドは `playwright.config.*` を読み込んだうえで次のファイルを書き込みます。
+`--no-install` はプロジェクトにインストール済みの Playwright を使います。このコマンドはエージェント定義、MCP 設定、seed ファイルを書き込む場合があります。[インストールガイド](docs/installation.md#manual-generator-setup)で影響を確認してください。その後エージェントを再起動し、プロジェクトの `playwright-test` MCP サーバーを承認します。Codex では、信頼済みプロジェクトの `.codex/config.toml` にセッション全体で使えるエントリーも必要です（[設定手順](docs/installation.md#codex)）。セッションに `generator_write_test` ツールが表示されれば生成を始められます。
 
-- `--loop=claude`: `.claude/agents/playwright-test-planner.md`、`playwright-test-generator.md`、`playwright-test-healer.md` と、`playwright-test` サーバー（`npx playwright run-test-mcp-server`）を宣言する `.mcp.json`。既存の `.mcp.json` はマージされず置き換えられるため、先にバックアップしてください。
-- `--loop=codex`: `.codex/agents/playwright_test_planner.toml`、`playwright_test_generator.toml`、`playwright_test_healer.toml`。各エージェントファイルの中で `playwright-test` サーバーを宣言し、`.codex/config.toml` は書き込みません。
-- 共通: `specs/` ディレクトリがなければ `specs/README.md` を、プロジェクトに seed テストがなければテストディレクトリに `seed.spec.ts` を作成します。
-
-その後、プロジェクトでエージェントを再起動します。Claude Code では、プロジェクトの `playwright-test` MCP サーバーを承認してください。Codex では、ジェネレーターがセッション全体で使えるサーバーを必要とするため、[インストールガイド](docs/installation.md#codex)のとおり、信頼済みプロジェクトの `.codex/config.toml` にも `playwright-test` を宣言してください。セッションに `generator_write_test` ツールが表示されれば生成を始められます。
-
-エージェントに失敗経路もテストさせたい場合は、[テスト作成メモ](docs/test-authoring-memo.md)をエージェントが読み込む指示ファイルに追加できます。Claude Code では E2E テストディレクトリを、Codex ではリポジトリのルートを指定します。Codex を E2E テストディレクトリで起動する場合は、そのディレクトリを指定してください。先に `--dry-run` を付けると内容を確認できます。
-
-```bash
-npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills guidance --host claude --project path/to/e2e-tests --memo
-npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills guidance --host codex --project path/to/repository --memo
-```
-
-開発段階のパイロットでは、最も大きな差を生んだのはメモファイルでした。メモファイルがない場合、スキルが検出した失敗経路の fault は Claude で 54 件中 42 件、Codex で 54 件中 27 件で、ルートの指示ファイルにメモがある場合（53/54、45/54）より少なくなりました。
-
-### インストールせずに CI でスキャンする
-
-スキャナーはスキルをインストールしなくても動くため、ローカルでも CI でもそのまま使えます。
-
-```bash
-npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills scan path/to/tests --format text
-```
-
-実際のリポジトリでは、スキャンが `INCOMPLETE`、終了コード 2 で終わることがよくあります。一部のコードを解析できなかったという意味で、テストが失敗したという意味ではありません。同じテストに対して `e2e-reviewer` スキルを実行するようエージェントに依頼してください。CI では `--allow-incomplete` を付けると、終了コードは解析できた finding だけに従います。レポートの読み方: `P0`（`[P0][CONFIRMED]`）は、何も確認せずに通過しうるテストであることが機械的に確認されたものです。`LLM-TRIAGE` は `e2e-reviewer` スキルが確認または棄却する未確認の候補で、`P0 candidate`（`[P0?]`）は確認されれば P0 になる候補です。`provenance-unsupported` は、`page` などの値の出どころをスキャナーが証明できず、そのコードを検査していないことを意味します。 レポートのその他の用語は[用語集](docs/scanner-cli.md#glossary)で定義しています。
-
-`npx` が `ETARGET`（"No matching version found ... with a date before"）で失敗する場合は、`.npmrc` に `min-release-age` が設定されています。この設定は、指定した日数より新しいリリースを隠します。`.npmrc` は編集せず、この固定バージョンのコマンドだけで解除してください: `npm_config_min_release_age=0 npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills scan path/to/tests --format text`
+指示ファイルの配置、任意のメモ、その測定結果と限界については、[テスト作成メモ](docs/test-authoring-memo.md)と[インストールガイド](docs/installation.md#optional-memo-and-failure-policy)を参照してください。
 
 ### その他のインストール方法とトラブルシューティング
 
@@ -266,10 +237,10 @@ codex plugin add e2e-skills@voidmatcha
 
 1 つ目は Claude Code 用、2 つ目は Codex 用です。テスト生成には、引き続き上記のプロジェクト設定が必要です。
 
-スキルが表示されない、または生成の準備が整わないままの場合は、読み取り専用の診断を実行してください。インストール済みのスキルのコピー（古い重複コピーと、削除された debugger スキルの残ったコピーを含む）、公式エージェントと MCP の設定、次の手順を報告し、何も変更しません。
+スキルが表示されない、または生成の準備が整わない場合は、インストール済みスキル、公式エージェント、MCP 設定を調べる読み取り専用の診断を実行してください。
 
 ```bash
-npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills doctor --host claude --project /path/to/playwright-project
+npx --yes --package=@voidmatcha/e2e-skills-scanner@3.7.0 e2e-skills doctor --host claude --project /path/to/playwright-project
 ```
 
 Codex では `--host codex` を使ってください。前提条件、プロジェクト設定まで行うインストーラー、手動設定については[インストールガイド](docs/installation.md)を参照してください。
@@ -283,40 +254,23 @@ Codex では `--host codex` を使ってください。前提条件、プロジ�
 
 同梱のシェルスクリプトは、`/bin/bash` と、ランチャーが要求する固定のシステム実行ファイルパスを使う一般的な macOS/Linux 構成を対象としています。Windows ユーザーには互換性のある WSL ディストリビューションと、WSL ファイルシステム内のプロジェクトが必要で、ネイティブ Windows はサポートしていません。NixOS や、Nix・pyenv・Conda・nvm だけで導入したツールは、すべてが自動検出されるわけではありません。信頼できるツールが見つからない場合は、該当の操作が停止します。環境の `PATH` を探索してこの境界を回避しないでください。スキルのリソースは、推測したホームディレクトリではなく、プラグインキャッシュやカスタムインストールを含め、ホストが実際に提供するスキルの場所から解決してください。
 
-generator は `thin-rules.md`、テスト作成メモ、安全指示を公式 planner と generator に付けて委譲し、reviewer scanner と新しいテストを実行します。何もインストールせず、agent・MCP 設定を変更せず、CLI fallback や healer を使いません。設定がなければ手順と読み取り専用の `e2e-skills doctor` を案内します。doctor は monorepo で Playwright config を持つパッケージ、未インストールの `e2e-reviewer`、任意の lint も報告します。
+生成には、承認済みの loopback origin と、書き込み用に隔離されたテストデータが必要です。[生成時の安全ルール](skills/playwright-test-generator/SKILL.md)と[信頼の境界](SECURITY.md)を参照してください。
 
-生成には、ローカル開発で一般的な loopback アドレス（`localhost`、`127.0.0.1`、`::1`）を使います。承認済みの開発サーバーと既存のテスト用 backend または mock を再利用します。browser 操作の前には、シナリオが使用するサービスだけを確認します。書き込みには隔離されたテストデータと削除またはリセットの方法が必要ですが、読み取り専用のシナリオにはリセットは不要です。新しい mock サーバーやデプロイ環境は必要ありません。使用しない API や database は N/A とし、共有データや本番データは対象外です。実行される navigation と request の宛先は承認済み origin の scheme・hostname・実効 port に一致する必要があり、別途承認した loopback API 宛先も許可します。それ以外や解決できない宛先は BLOCKED です。この確認は browser 全体の origin 隔離を提供しません。
-
-立証された生成エラーに限り、親 agent は最大 2 回修正できます。必要な結果と期待値を維持し、書き込みを繰り返す前にテストデータを安全に削除またはリセットし、同じ承認済み実行方法で origin・scanner のゲートを繰り返します。製品の欠陥、原因不明、残った失敗は BLOCKED のままです。全手順は [generator 契約](skills/playwright-test-generator/SKILL.md)を参照してください。
-
-probe の実行には、信頼するプロジェクトと、環境変数・flag を含む正確なコマンドの承認が必要です。レポートにはスキップした確認を記載します。mutation とアプリの fault probe は任意の追加作業であり、未実行の結果を測定済みとして報告しません。
-
-バージョン履歴と以前の generator 手順は [CHANGELOG.md](CHANGELOG.md)にまとめています。
+バージョン履歴は [CHANGELOG.md](CHANGELOG.md)にまとめています。
 
 </details>
 
 ## 生成したテストがバグを検出するか確認する
 
-生成は公式 Playwright agent が担当します。その後、generator skill は `e2e-reviewer` がインストールされていればスキャナーを実行し、最大 3 回で P0/P1 の検出項目を修正します。問題が残る場合やスキャンが未完了の場合は停止します。通過した場合、承認済みのプロジェクトのテストコマンドで、承認済みのプロジェクトまたは 1 つだけと確認したプロジェクトの新しい spec のみ実行し、テスト実行結果の passed/failed/skipped 件数を報告します。承認済みのテストコマンドがなければ、テストは未実行と報告します。欠けた確認やスキップは未完了として報告します。生成したテストが意味のある検証になっているかのレビューは、`e2e-reviewer` に別途依頼してください。
+公式 Playwright エージェントがテストを生成した後、スキルはスキャンを行い、承認済みのコマンドで新しい spec のみ実行します。スキップや未完了の確認は報告します。スキャンだけでは動作の網羅性を証明できません。意味的なレビューは `e2e-reviewer` に依頼し、特定の動作については[ランタイム検証](#experimental-runtime-proof-opt-in)を明示的に依頼してください。[生成のゲートと修正回数の上限](skills/playwright-test-generator/references/execution-and-report.md)と任意の[失敗時のポリシー](docs/test-failure-policy.md)も参照してください。
 
-まず通常の `e2e-reviewer` レビューで、テストが意図した動作を確認しているか調べます。実行による根拠が必要な問いが残れば、そのアサーションや動作だけに probe を追加できます。追加のトークンと実行時間をどこに使うかを選べます。mutation とアプリの fault probe を毎回のレビューで自動実行するわけではありません。
-
-- **アサーション mutation:** テストのコピーで検証条件を反転し、実際に失敗するか確認します。アサーションが失敗できるかを調べる検証であり、元のテストがアプリのバグを検出する証明ではありません。
-- **アプリへの欠陥注入:** アプリのコピーに特定のバグを入れ、変更していない既存テストが検出するか確認します。
-
-例えば「保存機能が壊れたら、このテストが検出するか確認して」と依頼してください。reviewer がローカルプロジェクトを調べ、検証方法を提案します。実行には信頼できる準備済みローカル環境とコマンドの承認が必要です。結果は選択したアサーションやバグに限られ、すべてのバグを検出する証明にはなりません。
-
-レビュー後に確認したい問いが複数残る場合、reviewer はそれらを一つのまとまりとして提案します。列挙された probe を一度承認すると、最初の probe で実行環境が正しく動くことを確認し、残りは件数または時間の上限に達するまで一つずつ実行します。結果は probe ごとに個別に判定した一つの表で受け取ります。
-
-詳細は[実行手順と準備条件](skills/e2e-reviewer/references/runtime-probes.md)、[OSS 2 例の作業手順検証](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/2992d57564bb5b0d7eae0650a64f392481211d41/snapshots/git-93afd3b105b869b15589634c88676230c7d92254/benchmarks/release-readiness-v1/README.md#portable-integration)を参照してください。
-
-任意で、エージェントがテストを書く際に失敗経路もテストさせたい場合は、[テスト作成メモ](docs/test-authoring-memo.md)を変更せずにプロジェクトの `CLAUDE.md` または `AGENTS.md` に貼り付けてください。常に読み込まれるこのファイルがメモの置き場所です。一部のホストではサブエージェントがこのファイルを引き継がないため、generator スキルは委譲先の公式エージェントにもメモを渡します。ファイルにメモがなければ下記の `guidance` コマンドを案内しますが、同意なしには何も書き込みません。ほかのスキルはこのメモを読み込みません。先に測定結果と限界を確認してください。任意の[テスト失敗ポリシー](docs/test-failure-policy.md)は同じファイルに入れる別のスニペットで、根拠となる要件を示さずに失敗したテストを書き換えないようエージェントに求めます。 貼り付ける代わりに `e2e-skills guidance --host claude|codex --project PATH --memo --policy` を実行すると、指定した場合にのみ、どちらか一方または両方を変更せずに HTML コメントのマーカーの間へ書き込みます。詳しくは[インストール手順](docs/installation.md#optional-memo-and-failure-policy)を参照してください。
+<a id="evidence-and-limits"></a>
 
 ## 根拠と限界
 
 発生率：Claude のソースレビューでは 34/200 件のリポジトリ（17.0%、95% CI 12.4–22.8%）が該当し、Claude と Codex が同じ箇所を確認したリポジトリは 32/200 件でした。数値には [timeout の再監査による訂正](CHANGELOG.md#swallowed-wait-re-audit)を反映しています。リンク先の HF スナップショットには訂正前の数値が残っています。[範囲と方法](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/770f2de79848c65b80116219ce2d03747a3ae370/raw/oss-prevalence-and-reviewer-20261106/oss-cases/summary.md) · [結果](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/770f2de79848c65b80116219ce2d03747a3ae370/raw/oss-prevalence-and-reviewer-20261106/oss-cases/CODEX-EXPANDED-REPORT.md)
 
-メモと healer：用意した regression 16 件の実験では、アプリコードの変更は 136 語の memo で 10/16 件、memo v5 で 0/16 件でした。Claude と Codex を別々に測定し、両方で同じ結果でした。測定時の構成では、プロジェクトの指示ファイルにメモが必要です。[実験条件と限界](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/5ba1d3e97f9dd810cf03ebc3b01dca54b12b4c6f/raw/evidence-20261106b/healer-memo-v5/tab2-results/memov5-heal-20261106.md) 開発用データでの結果であり、ホールドアウト評価ではありません。[別の開発段階の追試](docs/test-authoring-memo.md#failure-handling)では、メモなしで各モデル 16/16 件、メモありで Claude 0/16 件、Codex 1/16 件でした。これらは別々の実験結果です。
+メモと healer：用意した regression 16 件の実験では、アプリコードの変更は 136 語の memo で 10/16 件、memo v5 で 0/16 件でした。Claude と Codex を別々に測定し、両方で同じ結果でした。測定時の構成では、プロジェクトの指示ファイルにメモが必要です。[実験条件と限界](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/5ba1d3e97f9dd810cf03ebc3b01dca54b12b4c6f/raw/evidence-20261106b/healer-memo-v5/tab2-results/memov5-heal-20261106.md) 開発用データでの結果であり、ホールドアウト評価ではありません。[失敗時のメモを使った別の開発段階の追試](docs/test-authoring-memo.md#failure-handling)も参照してください。
 
 レビュー費用：Claude `claude-sonnet-5-5`、high effort の記録では 1 リポジトリ約 $1–2（追加サンプルの範囲：$0.58–1.96）でした。[費用表](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/770f2de79848c65b80116219ce2d03747a3ae370/raw/oss-prevalence-and-reviewer-20261106/reviewer-cost-table.md)
 
@@ -327,11 +281,9 @@ probe の実行には、信頼するプロジェクトと、環境変数・flag 
 
 [3.0.0 の検証記録](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/2992d57564bb5b0d7eae0650a64f392481211d41/snapshots/git-93afd3b105b869b15589634c88676230c7d92254/benchmarks/release-readiness-v1/README.md)は、インストール、スキャナーの動作、安全ルール、一部の Playwright/Cypress 実行を対象とし、保存した根拠と各結果の適用範囲を示しています。
 
-[10月20日の検証](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/2992d57564bb5b0d7eae0650a64f392481211d41/snapshots/git-93afd3b105b869b15589634c88676230c7d92254/benchmarks/release-readiness-v1/README.md#october-20-successor)では、隔離環境へのインストール、Claude Code と Codex での公式 agent/MCP によるテストの生成と実行、および選定した Cypress の assertion mutation とアプリへの不具合注入を確認しました。generator の元の測定とその後の再実行は引き続き分けて報告しています。
+レビュアーの開発段階の結果はモデルによって異なり、スキャナーの効果や未見のプロジェクトでの精度を示しません。モデル別の結果と限界は[ベンチマーク状況](benchmarks/STATUS.md)を参照してください。
 
-reviewer の結果はモデルによって異なります。同じ固定 snapshot と 36 件の公開開発事例を各 arm で 5 回反復した測定で、`gpt-6-sol` は [v22](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/2992d57564bb5b0d7eae0650a64f392481211d41/snapshots/git-93afd3b105b869b15589634c88676230c7d92254/benchmarks/reviewer-holdout-v22/README.md)、`gpt-6.1-sol` は [v24](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/2992d57564bb5b0d7eae0650a64f392481211d41/snapshots/git-93afd3b105b869b15589634c88676230c7d92254/benchmarks/reviewer-holdout-v24/README.md) に合格し、`gpt-6-luna` は [v23](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/2992d57564bb5b0d7eae0650a64f392481211d41/snapshots/git-93afd3b105b869b15589634c88676230c7d92254/benchmarks/reviewer-holdout-v23/README.md) で不合格でした。各実行とも 540 回の呼び出しを完了しました。ツールを無効にして与えた指示を評価した結果であり、スキャナーの効果や未見のプロジェクトでの精度を示すものではありません。スコアは各レポートで指定した snapshot にのみ適用されます。モデル別のスコア、プロトコル、否定的な結果、主張の範囲は[ベンチマーク状況](benchmarks/STATUS.md)、動作の変更履歴は [CHANGELOG.md](CHANGELOG.md)を参照してください。
-
-プロトコル、入力資料、要約、実行時の生データを含む過去のベンチマーク全体の固定 snapshot は[根拠 manifest](benchmarks/external-evidence.json)で固定され、[Hugging Face データセット](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks)から取得できます。過去のスコアを監査する前に `scripts/dev/fetch-benchmark-evidence.sh --dry-run` で復元計画を確認してください。
+プロトコル、入力資料、要約、実行時の生データを含む過去のベンチマーク全体の固定 snapshot は[根拠 manifest](benchmarks/external-evidence.json)で固定され、[Hugging Face データセット](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks)から取得できます。
 
 </details>
 
@@ -339,7 +291,7 @@ reviewer の結果はモデルによって異なります。同じ固定 snapsho
 
 カタログには、24 個の安定した Playwright/Cypress test smells が含まれます。代表的な false-green には、Locator truthiness、assertion の欠落、握りつぶされたエラー、focused tests、認証の欠落、network proof のない optimistic UI checks があります。[分類体系と根拠の詳細](docs/e2e-test-smells.md) を参照してください。
 
-一部のパターンは、テストだけでなくアプリケーションがレビュー範囲に含まれている必要があります。`#22` optimistic UI が最も明確な例です。クリックが実際に mutation を送るかどうかは spec だけでは判断できないため、テストのみのリポジトリでは推測せず何も報告しません。component がレビュー範囲にあっても、テストまたは受け入れ条件が書き込みを約束している場合にのみ `#22` を報告します。ヒントを除いた like ボタンのデモでは、reviewer の記録は最大でも NEEDS-CONTEXT でした（finding 0/3）。これは意図した false-positive 抑制です。
+一部のパターンには、テストだけでなくアプリケーションコードが必要です。`#22` optimistic UI では、書き込みを約束するテストまたは受け入れ条件と、関連するアプリケーションコードが必要で、spec だけからリクエストの欠如を推測しません。
 
 <details>
 <summary>重要度別の全 24 パターン</summary>
@@ -395,45 +347,19 @@ reviewer の結果はモデルによって異なります。同じ固定 snapsho
 
 ## 失敗デバッグ
 
-`playwright-debugger` と `cypress-debugger` は、薄い `e2e-debugger` 1 つに置き換えられました。実際の失敗ケース各 24 件で Claude を 2 回測定したところ、以前のデバッガーは通常のエージェントより正確ではなく（20/24 対 22/24、22/24 対 23/24）、コストは約 1.6–1.7 倍、実行時間は約 1.8 倍でした。失敗中のテストは普段の言葉（"This test is failing, fix it."）で依頼すると、[`e2e-debugger`](skills/e2e-debugger/SKILL.md) がその依頼に [test-authoring memo](docs/test-authoring-memo.md#failure-handling) の失敗時の項目を適用するため、instruction ファイルの設定は不要です。テストを retry なしで 3 回再実行し、結果が混在すれば FLAKY と報告して止まります。そうでなければアプリとテストのどちらが誤っているかを判断し、アプリの regression が疑われる場合は製品コードもテストも変えずに報告し、テストの欠陥が証明された場合だけテストを弱めずに修正して、変更した spec をスキャンし 3 回連続の成功を確認します。同じルールをプロンプトに貼り付けて公式 Playwright healer に修正を任せることもあります。根拠: [用意した healer 実験](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/5ba1d3e97f9dd810cf03ebc3b01dca54b12b4c6f/raw/evidence-20261106b/healer-memo-v5/tab2-results/memov5-heal-20261106.md)で、Claude Sonnet 5.5 と Codex GPT-6 Sol はそれぞれ、136 語の memo では regression 16 件中 10 件でアプリコードを変更し、memo v5（301 語）では 0 件でした。 開発用データでの結果であり、ホールドアウト評価ではありません。[別の開発段階の追試](docs/test-authoring-memo.md#failure-handling)では、メモなしで各モデル 16/16 件、メモありで Claude 0/16 件、Codex 1/16 件でした。これらは別々の実験結果です。両条件ともルートの instruction ファイルに memo を置き、各ケースを 1 回ずつ実行しました。この結果だけでは文言と長さの効果を切り分けられません。skill は instruction ファイルなしで失敗時の対処指針を届けますが、この届け方はまだ測定していません。assertion を弱めて成功させたテストには `e2e-reviewer` を使ってください。以前のインストールで残ったデバッガーのコピーについて、インストーラーと `e2e-skills doctor` は警告するだけで削除しません。使わない場合はご自身で削除してください。
+普段の言葉（"This test is failing, fix it."）で依頼すると、[`e2e-debugger`](skills/e2e-debugger/SKILL.md) を使えます。選んだテストを retry なしで 3 回再実行し、結果が混在すれば FLAKY と報告します。製品コードを変更せずにアプリの回帰の疑いを報告し、証明されたテストの欠陥だけをアサーションを弱めずに修正します。変更した spec にはスキャナーの確認と 3 回の再実行の成功が必要です。ルールと根拠は[失敗時のメモ](docs/test-authoring-memo.md#failure-handling)を参照してください。アサーションを弱めて成功させたテストには `e2e-reviewer` を使ってください。
 
-## スタンドアロンスキャナー
+<a id="experimental-runtime-proof-opt-in"></a>
 
-AI agent に依頼せず、コードスキャナーだけを直接実行できます。レビューする問題候補を探す道具であり、テストの実行や、意図した動作を検証しているかの判断は行いません。
+## 実験的なランタイム検証（明示的な依頼が必要）
 
-```bash
-npx --yes --package=@voidmatcha/e2e-skills-scanner@3.6.0 e2e-skills scan path/to/tests --format text
-```
-
-Node.js 22 以降が必要で、TypeScript パーサーは同梱されています。npx はキャッシュにない package と依存関係をダウンロードします。scanner 自体は tool のダウンロード、プロジェクト設定コードの読み込み、テストの実行を行いません。構造化された出力には `--format json`、レポートの保存には `--report-file <new-file>` を使います。既存ファイルは上書きしません。
-
-reviewer には同じ Node scanner が同梱されており、別途 npm でインストールする必要はありません。オフライン launcher と実行要件は [scanner ガイド](docs/scanner-cli.md#installed-scanner)を参照してください。
-
-scan だけでは assertion mutation や fault injection は実行されません。これらの検査には、信頼でき準備済みのプロジェクトが必要です。[CLI と probe のガイド](docs/scanner-cli.md)を参照してください。
-
-<details>
-<summary>スキャナーの詳細設定とファイル読み取り範囲</summary>
-
-インストール済みのプロジェクト ESLint と設定を実行するには、checkout を明示的に信頼し、正確なコマンドを承認してから `--project-eslint --trust-project` を追加します。プロジェクト管理のコードが host 権限で動作し、sandbox や依存関係のインストールは提供しません。同梱検査にはこの指定は不要です。
-
-> **読み取り範囲。**
-> <!-- README-I18N-CONTRACT:SCANNER-READ-SCOPE:START -->
-> 同梱 checks は、requested path 配下の source を report します。Framework provenance resolution は、containing project 内の別の場所にある relative fixture/support imports も読む場合があります。
-> <!-- README-I18N-CONTRACT:SCANNER-READ-SCOPE:END -->
-
-<!-- README-CONTRACT:SCANNER-EXTENSIONS:START -->
-同梱 checks は `.ts`, `.js`, `.tsx`, `.jsx`, `.mts`, `.mjs`, `.cts`, `.cjs` の source を読み取ります。
-<!-- README-CONTRACT:SCANNER-EXTENSIONS:END -->
-
-デフォルトの `p0` ポリシーは機械的に確認された P0 があれば exit 1 を返します。P0 候補も対象にするには `--fail-on p0-candidate` を指定します。`any` は確認済みの全指摘を対象とし、`none` は件数による終了判定を行いません。exit 0 は選んだ基準に達しなかったことだけを示し、テストが健全であることは意味しません。この基準で失敗するのは機械的に確認された指摘だけです。これには、テストの唯一のアサーションを `if` で囲む #5a の狭い形 1 つと、`expect(x || true)` の真偽チェックおよび Locator の `count()` を `>= 0` か `> -1` と比べる #4a の狭い形 2 つが含まれるようになりました。それ以外の P0 の問題の多くは引き続き候補として現れ、`e2e-reviewer` の LLM レビューで確認する必要があります。実行完了かつ P0=0 でも、残る候補と追加確認事項のレビューが必要です。入力不足、ソースの整合性や解析の失敗は INCOMPLETE と exit 2 を返します。 未解決の解析で CI を止めたくない場合は `--allow-incomplete` を追加します。終了コードは解析できた指摘にだけポリシーを適用し、レポートは解析できずチェックされていないファイルと箇所の数を示します。入力不足とソースの整合性の失敗は引き続き exit 2 です。テストが workspace package から `test` や `expect` を import する場合は、`--trust-module <package>=<scan root 内のソース entry のパス>` を追加するとその import を辿れます。すべての意味的な検証を完了したことは保証しません。実行とネットワークの境界は [SECURITY.md](SECURITY.md) を参照してください。
-
-</details>
+`e2e-reviewer` は静的レビューから始めます。明示的な依頼がなければランタイム検証を提案も実行もしません。たとえば、成功している特定のテストが保存処理の不具合を検出できるか依頼できます。実験的な手順では、使い捨てのコピーにアサーション変更や根拠のあるアプリの欠陥を準備できます。複数の検証をまとめて提案するのも明示的な依頼があった場合だけです。対象コードの実行には、信頼済みの checkout と正確なコマンドの承認が必要です。結果は選んだテストと欠陥だけに適用され、suite 全体には適用されません。実際のプロジェクトで実行に至れるか、静的レビューより有益かは未証明です。[実行手順](skills/e2e-reviewer/references/runtime-probes.md)と[リリースノート](CHANGELOG.md#experimental-reviewer-runtime-proof)を参照してください。
 
 ## ESLint plugin との違い
 
 `eslint-plugin-playwright` と `eslint-plugin-cypress` は、テストコードのよくある誤りを検出するツールです。`e2e-skills` のスキャナーも、これらを任意の検査層として活用します。
 
-このプロジェクトから `eslint-plugin-playwright` に `no-unnecessary-assertions` ルールを貢献し、[PR #470 が merge されました](https://github.com/mskelton/eslint-plugin-playwright/pull/470)。アプリの状態ではなく、Locator オブジェクトの存在だけを確認するアサーションを検出します。
+このプロジェクトは `eslint-plugin-playwright` に `no-unnecessary-assertions` ルールを貢献しました（[mskelton/eslint-plugin-playwright#470](https://github.com/mskelton/eslint-plugin-playwright/pull/470)、マージ済み）。アプリの状態ではなく、Locator オブジェクトの存在だけを確認するアサーションを検出します。同名の Cypress ルールも貢献し、`eslint-plugin-cypress` 7.2.0 に入りました（[cypress-io/eslint-plugin-cypress#400](https://github.com/cypress-io/eslint-plugin-cypress/pull/400)、マージ済み）。`expect(cy.get('.badge')).to.exist` のように、キューに入った Cypress チェーンに外側から Chai アサーションをかけるコードを検出します。キュー内のコマンドは要素がなければ失敗するため、常に通るテストではなく、アサーションの明確さを扱うルールです。
 
 プラグインの実行にはユーザーの明示的な許可が必要です。許可がなくても同梱の検査は実行できます。既存のプラグインルールに加え、次を提供します。
 
@@ -456,7 +382,6 @@ linter は直接的な Locator truthiness assertion や missing `await` を検�
 
 assertion mutation とアプリの fault probe は、repository を信頼し、environment と flags を含む exact command を承認した後にのみ target-controlled code を実行します。generator はレビュアーのスキャナーで確認した後、承認済みのプロジェクトのテストコマンドで、自身が書いた spec のみ実行します。
 
-non-public benchmark runs では、`--isolation-wrapper` は required hook であり、isolation の証明ではありません。Continuous integration (CI) は wrapper contract を検証しますが、filesystem、process、network isolation は attestation しません。
 <!-- README-I18N-CONTRACT:CORE-SAFETY:END -->
 
 </details>
@@ -464,6 +389,33 @@ non-public benchmark runs では、`--isolation-wrapper` は required hook で�
 ### これは Playwright/Cypress のテスト実行を置き換えますか?
 
 いいえ。このバンドルはテスト品質をレビューし、Playwright カバレッジを生成し、承認済みのテストコマンドで失敗中のテストを修正します。テスト runner ではありません。
+
+<a id="scan-in-ci-without-installing"></a>
+
+<a id="standalone-scanner"></a>
+
+## スタンドアロンスキャナー
+
+スキルをインストールせず、ローカルや CI でスキャナーを実行できます（Node.js 22+ が必要）。
+
+```bash
+npx --yes --package=@voidmatcha/e2e-skills-scanner@3.7.0 e2e-skills scan path/to/tests --format text
+```
+
+レビュアーには同じスキャナーを同梱しています。候補を報告しますが、テストを実行せず、意図した動作を証明するかも判断できません。TypeScript パーサーは同梱されており、同梱スキャナーはデフォルトではツールをダウンロードせず、プロジェクト設定も読み込みません。
+
+`INCOMPLETE` は一部のコードを解析できなかったことを示し、テストの失敗を意味しません。通常は終了コード 2 です。`--allow-incomplete` を使っても、終了コード 0 はクリーンな結果を証明しません。残った候補には引き続き Phase 2 のレビューが必要で、`P0=0` でも解決済みにはなりません。JSON には `--format json`、非公開のテキストレポートには `--report-file <new-file>` を使います。
+
+`--project-eslint --trust-project` でプロジェクトの ESLint を実行するには、checkout への明示的な信頼と正確なコマンドの承認が必要です。`--fail-on p0-candidate`、`--allow-incomplete`、`--trust-module`、終了コード、網羅性の限界、インストール時の問題は[スキャナーガイド](docs/scanner-cli.md)、信頼の境界は [SECURITY.md](SECURITY.md)を参照してください。
+
+> **読み取り範囲。**
+> <!-- README-I18N-CONTRACT:SCANNER-READ-SCOPE:START -->
+> 同梱 checks は、requested path 配下の source を report します。Framework provenance resolution は、containing project 内の別の場所にある relative fixture/support imports も読む場合があります。
+> <!-- README-I18N-CONTRACT:SCANNER-READ-SCOPE:END -->
+
+<!-- README-CONTRACT:SCANNER-EXTENSIONS:START -->
+同梱 checks は `.ts`, `.js`, `.tsx`, `.jsx`, `.mts`, `.mjs`, `.cts`, `.cjs` の source を読み取ります。
+<!-- README-CONTRACT:SCANNER-EXTENSIONS:END -->
 
 ## GitHub Actions に静的スキャンを追加
 
@@ -477,6 +429,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -505,11 +460,9 @@ jobs:
 - [オープンソースの事例集](docs/case-studies.md)
 - [過去のベンチマーク全体の固定 snapshot (Hugging Face データセット)](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks)
 - [外部根拠台帳](docs/llm-generated-e2e-test-evidence.md)
-- [過去の AI レビューベンチマーク](docs/ai-reviewer-benchmark.md)
 - [フレームワークの対象範囲](docs/framework-scope.md)
 - [ローカル E2E ルールブリッジと推奨 lint](docs/installation.md#optional-project-lint)
 - [ロードマップ](docs/roadmap.md)
-- [Archived reviewer evidence plan](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/a8279e972f2ae5b7628ac9ec8ccfc4cdac380a1d/releases/v3.3.1/docs-archive-20261028/README.md)
 
 </details>
 

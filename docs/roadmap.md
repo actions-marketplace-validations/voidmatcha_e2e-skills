@@ -1,12 +1,12 @@
 # Roadmap and Upstream Contributions
 
-## Evidence status at 3.0.0
+## Evidence status
 
 [Benchmark status](../benchmarks/STATUS.md) records measured outcomes and their limits, including the reviewer, generator and debugger comparisons. This roadmap tracks remaining work and upstream contributions. All evaluated corpora are public development evidence; the project has no passing release-grade benchmark for generalized reviewer accuracy.
 
 **Open:** independent clean-case labels with a complete, auditable setup/caller/reverse-user boundary, so that false positives and the full reviewer's added value over no-skill and catalog-only baselines can be measured on a corpus the skill was not tuned on. Frozen specificity v4 remains blocked; the separate development work has not produced a release corpus or a specificity result. The [September planning snapshot](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/a8279e972f2ae5b7628ac9ec8ccfc4cdac380a1d/releases/v3.3.1/docs-archive-20261028/README.md) preserves replay counts, hashes, and verification limits.
 
-**Debuggers:** `playwright-debugger` and `cypress-debugger` were removed after two Claude measurements on 24 real failure cases each found no accuracy gain over a plain agent; 3.5 replaces them with one thin `e2e-debugger`, which delivers the test-authoring memo's failure-handling lines with the request and adds a deterministic three-run flake check. Its measurement (official healer, healer plus memo, and the skill, per model) is pending. Earlier runs had also found no measured lift over a taxonomy-free prompt on real failures.
+**Failure debugging:** `e2e-debugger` handles Playwright and Cypress test failures with a three-run flake check and the [failure-handling rules](test-authoring-memo.md#failure-handling). Historical debugger comparisons and the skill's development results are recorded in [CHANGELOG.md](../CHANGELOG.md); they do not establish accuracy on unseen projects.
 
 ## Upstream contribution track
 
@@ -22,7 +22,7 @@ This page tracks self-selected upstream contributions and future candidates. Mer
 - **In review:** 6 active/open upstream PRs.
 - **Closed without merge:** 5. Recorded below rather than dropped; the merge count above is meaningless without them.
 - **Generated ledger:** the counts above cover this hand-curated page. [Field review v1](https://huggingface.co/datasets/voidmatcha/e2e-skills-benchmarks/blob/2992d57564bb5b0d7eae0650a64f392481211d41/snapshots/git-93afd3b105b869b15589634c88676230c7d92254/benchmarks/field-review-v1/README.md) is generated from GitHub for every pull request whose body names the skill and currently records more submissions, merges, and rejections than this page lists. Neither is complete: this page omits some marked pull requests, and the ledger cannot see an unmarked one such as [calcom/cal.diy#28486](https://github.com/calcom/cal.diy/pull/28486).
-- **Upstream tooling:** the always-passing-Locator-assertion smell (`#4f`) was contributed to the official [`eslint-plugin-playwright`](https://github.com/mskelton/eslint-plugin-playwright) as the `no-unnecessary-assertions` rule ([#470](https://github.com/mskelton/eslint-plugin-playwright/pull/470), merged) — tracked separately from the test-fix count below.
+- **Upstream tooling:** the always-passing-Locator-assertion smell (`#4f`) was contributed to the official [`eslint-plugin-playwright`](https://github.com/mskelton/eslint-plugin-playwright) as the `no-unnecessary-assertions` rule ([mskelton/eslint-plugin-playwright#470](https://github.com/mskelton/eslint-plugin-playwright/pull/470), merged), and a Cypress rule with the same name followed in `eslint-plugin-cypress` 7.2.0 ([cypress-io/eslint-plugin-cypress#400](https://github.com/cypress-io/eslint-plugin-cypress/pull/400), merged) as an assertion-clarity check, not a `#4f` equivalent. Both are tracked separately from the test-fix count below.
 - **Queue policy:** prefer high-signal P0 silent-pass fixes; accept concrete P1 sequencing or diagnostics fixes without relabeling them as P0 evidence, and avoid padding with subjective P1/P2 style findings.
 - **Submission policy:** one narrow anti-pattern per PR where possible, local verification first, and an `e2e-reviewer` footer only when it is useful context.
 
