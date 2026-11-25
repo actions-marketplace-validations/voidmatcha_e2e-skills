@@ -1,5 +1,20 @@
 # Changelog
 
+## [3.8.0] - 2026-11-24
+
+### Scanner and reviewer
+
+- Group unresolved scan diagnostics by detector and reason in a capped text "Why incomplete" section and an additive JSON `incompleteSummary`. Counts, affected files and hints help locate unchecked code; hints do not imply safety. Findings, full diagnostics and exit codes are unchanged by this summary.
+- Recognize bounded Cypress positional-selector options and a new DOM query after a literal numeric `cy.wait(...)`; chained alias-wait queries remain unresolved, while separate statements are unaffected. These two previously unresolved call shapes can now produce `#10a` review candidates at any number of locations; no new confirmed findings are claimed. Scans incomplete only because of these shapes may now be COMPLETE and exit 0 under the same finding policy.
+
+### GitHub Action
+
+- Show grouped incomplete causes in the job summary while retaining display caps and full report artifacts.
+
+### Documentation
+
+- Clarify self-repository fixture exclusions, scanner evidence labels, Action policy exits and guidance file statuses; correct CLI examples and synchronize the README translations.
+
 ## [3.7.0] - 2026-11-24
 
 ### Reviewer and scanner

@@ -75,6 +75,44 @@ function f(cy){cy.get('x').first();}`, 'case.cy.ts');
   assert.deepEqual(ids(scan("cy.get=custom;cy.get('x').first();", 'case.cy.ts')), []);
 });
 
+test('Cypress positional options and fresh get after wait are analyzed without broadening Playwright', () => {
+  const result = scan(`cy.get('.row').first({ timeout: 10000 });
+cy.contains('Save').last({ log: false });
+cy.wait(1000).get('.weekday').first();
+cy.get('.row').first();`, 'case.cy.ts');
+  assert.deepEqual(ids(result), ['#10a', '#10a', '#10a', '#10a']);
+  assert.deepEqual(result.diagnostics, []);
+  assert.ok(result.findings.every(item => item.disposition === 'candidate'));
+
+  const guards = scan(`cy.wait(1000).first();
+cy.wrap({}).get('.row').first();
+cy.get('.row').first({ timeout: runtimeTimeout });
+cy.get('.row').last({ log: false, unknown: true });
+cy.get('.row').first({ get timeout() { return 10; } });`, 'case.cy.ts');
+  assert.deepEqual(guards.findings, []);
+  assert.ok(guards.diagnostics.length >= 4);
+  const playwright = scan(wrap(`page.locator('.row').first({ timeout: 10000 });
+page.locator('.row').first();`));
+  assert.deepEqual(ids(playwright), ['#10a']);
+  assert.ok(playwright.diagnostics.length);
+});
+
+test('only numeric Cypress waits can establish subsequent DOM query provenance', () => {
+  const result = scan(`cy.wait(1000).get('.row').first();
+cy.wait(1000, { log: false }).contains('Save').last();
+cy.wait('@api').contains('Save').first();
+cy.wait('@api').get('.row').first();
+cy.wait(['@api', '@other']).get('.row').first();
+cy.wait(delayOrAlias).contains('Save').first();
+cy.wait(\`@api\`).contains('Save').last();
+cy.wait('@api').get('.row').first({ timeout: 10000 });`, 'case.cy.ts');
+  assert.deepEqual(result.findings.map(item => [item.patternId, item.line]), [['#10a', 1], ['#10a', 2]]);
+  assert.ok(result.findings.every(item => item.severity === 'P1' && item.disposition === 'candidate' &&
+    item.evidence === undefined));
+  assert.equal(result.diagnostics.length, 6);
+  assert.ok(result.diagnostics.every(item => item.message === 'Cypress subject producer is outside the bounded DOM chain'));
+});
+
 test('optional/computed calls and document-property provenance are explicitly outside this slice', () => {
   const result = scan(wrap(`document?.querySelector('x'); document['querySelector']('x');
 window.document.querySelector('x');

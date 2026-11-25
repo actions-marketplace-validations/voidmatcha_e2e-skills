@@ -6,7 +6,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { annotations, changedFiles, compareFiles, inputs, invocation, main, newFindings, PACKAGE, SUMMARY_LIMIT } from '../actions/scan.mjs';
+import { annotations, changedFiles, compareFiles, groupedIncompleteSummary, inputs, invocation, main, newFindings, PACKAGE, renderJobSummary, SUMMARY_LIMIT } from '../actions/scan.mjs';
+import { incompleteSummary } from '../../packages/scanner/src/incomplete-summary.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -132,6 +133,125 @@ test('summary caps long lists, dedupes diagnostics and ranks changed-file P0 fir
   const full = fs.readFileSync(reportFile, 'utf8');
   assert.equal((full.match(/P1 candidate #9/g) || []).length, SUMMARY_LIMIT + 20);
   assert.equal((full.match(/analysis incomplete:/g) || []).length, SUMMARY_LIMIT + 30);
+});
+
+test('grouped summary caps causes and top files, accounts for omitted counts and retains full raw reports', t => {
+  const { workspace, env } = fixture(t);
+  const groups = Array.from({ length: SUMMARY_LIMIT + 2 }, (_, i) => ({
+    detector: 'promises', code: i === 0 ? 'provenance-unsupported' : `reason-${i}`, count: 4,
+    topFiles: Array.from({ length: 4 }, (_, j) => ({ file: path.join(workspace, `file-${j}.spec.ts`), count: 1 })),
+    hint: 'Use a directly imported helper; this code was not checked.', specificHint: true,
+  }));
+  const incomplete = groups.flatMap(group => Array.from({ length: group.count }, (_, i) => `raw ${group.code} location ${i}`));
+  const report = { schema: 'e2e-skills-node-scan-v1', findings: [],
+    execution: { complete: false, incomplete, exitCode: 0 },
+    incompleteSummary: { total: incomplete.length, groups } };
+  assert.equal(main({ ...env, SCAN_FORMAT: 'text' }, () => ({ status: 0, stdout: JSON.stringify(report), stderr: '' })), 0);
+  const summary = fs.readFileSync(env.GITHUB_STEP_SUMMARY, 'utf8');
+  assert.equal((summary.match(/promises \/ unrecognized-reason/g) || []).length, SUMMARY_LIMIT - 1);
+  assert.match(summary, /promises \/ provenance-unsupported \| 4 \| file-0\.spec\.ts \(1\); file-1\.spec\.ts \(1\); file-2\.spec\.ts \(1\)/);
+  assert.match(summary, /2 more cause group\(s\), 8 unresolved diagnostic\(s\)/);
+  assert.match(summary, new RegExp(`Total unresolved diagnostics: ${incomplete.length}`));
+  assert.ok(!summary.includes('file-3.spec.ts'));
+  assert.ok(!summary.includes('raw reason-'));
+  assert.ok(!summary.includes(workspace + path.sep));
+  const outputs = Object.fromEntries(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8').trim().split('\n').map(line => line.split('=')));
+  const full = fs.readFileSync(outputs.report, 'utf8');
+  for (const diagnostic of incomplete) assert.ok(full.includes(diagnostic));
+  assert.deepEqual(JSON.parse(fs.readFileSync(outputs['json-report'], 'utf8')), report);
+});
+
+test('grouped summary hides untrusted cause labels and keeps paths and hints in literal cells', t => {
+  const { workspace, env } = fixture(t);
+  const settings = inputs(env);
+  const report = { findings: [], execution: { complete: false, incomplete: ['raw'], exitCode: 0 },
+    incompleteSummary: { total: 1, groups: [{ detector: 'promises', code: 'provenance-unsupported', count: 1,
+      topFiles: [{ file: path.join(workspace, '```\n::error::forged\n<img>|[link](bad).spec.ts'), count: 1 }],
+      hint: '```\n# heading\n<script>bad</script>|extra', specificHint: false }] } };
+  const summary = renderJobSummary(report, settings);
+  assert.match(summary, /promises \/ provenance-unsupported/);
+  assert.ok(summary.includes('&#96;&#96;&#96;&#92;n&#58;&#58;error&#58;&#58;forged&#92;n&#60;img&#62;&#124;&#91;link&#93;(bad).spec.ts (1)'));
+  assert.ok(summary.includes('&#96;&#96;&#96;&#92;n&#35;\u200b heading&#92;n&#60;script&#62;bad&#60;/script&#62;&#124;extra'));
+  assert.ok(!summary.includes(workspace + path.sep));
+  assert.match(summary, /^Detector \/ reason \| Count \| Top files \(count\) \| What to change$/m);
+  assert.match(summary, /^--- \| ---: \| --- \| ---$/m);
+  assert.doesNotMatch(summary, /<img>|<script>|\[link\]\(bad\)/);
+  assert.ok(!summary.includes('\n::error::'));
+  assert.ok(!summary.includes('\n# heading'));
+  report.incompleteSummary.groups[0].detector = 'promises|injected';
+  report.incompleteSummary.groups[0].code = 'reason\nnew row';
+  const hidden = renderJobSummary(report, settings);
+  assert.match(hidden, /unrecognized-detector \/ unrecognized-reason/);
+  assert.match(hidden, /\(file paths withheld\)/);
+  assert.ok(!hidden.includes('promises|injected') && !hidden.includes('reason\\nnew row'));
+  assert.ok(!hidden.includes('::error::forged'));
+});
+
+test('pinned scanner diagnostics produce grouped job output without changing full reports', t => {
+  const { workspace, env } = fixture(t);
+  const file = path.join(workspace, 'legacy.spec.ts');
+  const report = { schema: 'e2e-skills-node-scan-v1', findings: [], execution: {
+    complete: false, exitCode: 0, incomplete: ['legacy raw diagnostic one', 'legacy raw diagnostic two'],
+    diagnostics: [
+      { detector: 'promises', code: 'provenance-unsupported', file, line: 2 },
+      { detector: 'promises', code: 'provenance-unsupported', file, line: 3 },
+    ],
+  } };
+  assert.equal(main({ ...env, SCAN_FORMAT: 'text' }, () => ({ status: 0, stdout: JSON.stringify(report), stderr: '' })), 0);
+  const summary = fs.readFileSync(env.GITHUB_STEP_SUMMARY, 'utf8');
+  assert.match(summary, /Total unresolved diagnostics: 2/);
+  assert.match(summary, /promises \/ provenance-unsupported \| 2 \| legacy\.spec\.ts \(2\)/);
+  assert.match(summary, /source-visible, immutable helper return/);
+  assert.match(summary, /This code was not checked/);
+  assert.doesNotMatch(summary, /legacy raw diagnostic/);
+  const outputs = Object.fromEntries(fs.readFileSync(env.GITHUB_OUTPUT, 'utf8').trim().split('\n').map(line => line.split('=')));
+  const full = fs.readFileSync(outputs.report, 'utf8');
+  for (const diagnostic of report.execution.incomplete) assert.ok(full.includes(diagnostic));
+  assert.deepEqual(JSON.parse(fs.readFileSync(outputs['json-report'], 'utf8')), report);
+  assert.equal(Object.hasOwn(report, 'incompleteSummary'), false);
+  assert.deepEqual(groupedIncompleteSummary(report, inputs(env)), groupedIncompleteSummary(
+    { ...report, incompleteSummary: incompleteSummary(report.execution.diagnostics) }, inputs(env)),
+  'legacy pinned npm JSON uses the checkout summary implementation without changing the report');
+  report.incompleteSummary = { total: 3, groups: [] };
+  assert.equal(groupedIncompleteSummary(report, inputs(env)), null);
+  assert.match(renderJobSummary(report, inputs(env)), /legacy raw diagnostic one/);
+});
+
+test('grouped summary has no section for zero unresolved diagnostics and rejects inconsistent totals', t => {
+  const { env } = fixture(t);
+  const settings = inputs(env);
+  const report = { findings: [], execution: { complete: true, incomplete: [], exitCode: 0 },
+    incompleteSummary: { total: 0, groups: [] } };
+  assert.deepEqual(groupedIncompleteSummary(report, settings), []);
+  assert.doesNotMatch(renderJobSummary(report, settings), /INCOMPLETE:|Total unresolved|Detector \/ reason/);
+  report.execution = { complete: false, incomplete: ['original unresolved diagnostic'], exitCode: 0 };
+  assert.equal(groupedIncompleteSummary(report, settings), null);
+  assert.match(renderJobSummary(report, settings), /INCOMPLETE: some code was not analysed/);
+  assert.match(renderJobSummary(report, settings), /original unresolved diagnostic/);
+  report.execution.incomplete = [];
+  assert.match(renderJobSummary(report, settings), /INCOMPLETE: some code was not analysed/);
+  report.execution.incomplete = ['original unresolved diagnostic'];
+  report.incompleteSummary = { total: 7, groups: [
+    { detector: 'promises', code: 'one', count: 2, topFiles: [], hint: 'Not checked.' },
+    { detector: 'waits', code: 'two', count: 5, topFiles: [], hint: 'Not checked.' },
+  ] };
+  const lines = groupedIncompleteSummary(report, settings);
+  const renderedCounts = lines.filter(line => /^(promises|waits) \/ /.test(line)).map(line => Number(line.split(' | ')[1]));
+  assert.equal(renderedCounts.reduce((sum, count) => sum + count, 0), report.incompleteSummary.total);
+  report.incompleteSummary.total++;
+  assert.equal(groupedIncompleteSummary(report, settings), null);
+  assert.match(renderJobSummary(report, settings), /original unresolved diagnostic/);
+  assert.doesNotMatch(renderJobSummary(report, settings), /Total unresolved diagnostics/);
+});
+
+test('grouped job summary keeps the existing character budget', t => {
+  const { env } = fixture(t);
+  const report = { findings: [], execution: { complete: false, incomplete: ['raw'], exitCode: 0 },
+    incompleteSummary: { total: 1, groups: [{ detector: 'promises', code: 'one', count: 1,
+      topFiles: [], hint: 'x'.repeat(600_000), specificHint: false }] } };
+  const summary = renderJobSummary(report, inputs(env));
+  assert.match(summary, /\[Summary truncated; full report is in the report output\.\]/);
+  assert.ok(summary.length < 501_000);
 });
 
 test('missing base commit falls back to full report; invalid event and SHA fail before scan', t => {
@@ -548,4 +668,83 @@ test('real bundled scanner: P0 failure, clean pass, unresolved opt-in and read-o
   assert.equal(main(env, scan), 0);
   assert.equal(fs.readFileSync(spec, 'utf8'), before);
   assert.equal(fs.existsSync(path.join(workspace, 'node_modules')), false);
+});
+
+test('known Cypress diagnostics produce a real Markdown table and preserve file paths', t => {
+  const { workspace, env } = fixture(t);
+  const report = { findings: [], execution: { complete: false, incomplete: ['raw'], exitCode: 2 },
+    incompleteSummary: { total: 1, groups: [{ detector: 'cypressAssignment', code: 'shape-unsupported', count: 1,
+      topFiles: [{ file: path.join(workspace, 'fixture.cy.js'), count: 1 }], hint: 'Inspect the original call.' }] } };
+  const summary = renderJobSummary(report, inputs(env));
+  assert.match(summary, /^Detector \/ reason \| Count \| Top files \(count\) \| What to change$/m);
+  assert.match(summary, /^cypressAssignment \/ shape-unsupported \| 1 \| fixture\.cy\.js \(1\) \| Inspect the original call\.$/m);
+  assert.match(summary, /^    Scanner:/m);
+  assert.doesNotMatch(summary, /unrecognized-detector|file paths withheld/);
+});
+
+test('Markdown table cells cannot create links, images, HTML, table columns or extra rows', t => {
+  const { workspace, env } = fixture(t);
+  const hostile = '&lt;script&gt;![image](https://bad.invalid) **bold** _italic_ ~strike~ `code` | cell\\\n::error::forged';
+  const report = { findings: [], execution: { complete: false, incomplete: ['raw'], exitCode: 2 },
+    incompleteSummary: { total: 1, groups: [{ detector: 'promises', code: 'shape-unsupported', count: 1,
+      topFiles: [{ file: path.join(workspace, hostile + '.spec.ts'), count: 1 }], hint: hostile }] } };
+  const summary = renderJobSummary(report, inputs(env));
+  const row = summary.split('\n').find(line => line.startsWith('promises /'));
+  assert.equal(row.split(' | ').length, 4);
+  for (const syntax of ['&lt;', '![image]', '**bold**', '_italic_', '~strike~', '`code`', '| cell', 'https://'])
+    assert.ok(!row.includes(syntax), syntax);
+  assert.ok(row.includes('&#38;lt;script&#38;gt;'));
+  assert.ok(row.includes('&#124;'));
+  assert.ok(row.includes('&#92;n&#58;&#58;error&#58;&#58;forged'));
+  assert.doesNotMatch(summary, /^::error::/m);
+});
+
+test('Markdown table paths cannot autolink bare domains or issue references', t => {
+  const { workspace, env } = fixture(t);
+  fs.mkdirSync(path.join(workspace, 'www.evil.example'));
+  fs.writeFileSync(path.join(workspace, 'www.evil.example', '#123.cy.js'), '');
+  const report = { findings: [], execution: { complete: false, incomplete: ['raw'], exitCode: 2 },
+    incompleteSummary: { total: 1, groups: [{ detector: 'promises', code: 'shape-unsupported', count: 1,
+      topFiles: [{ file: path.join(workspace, 'www.evil.example', '#123.cy.js'), count: 1 }],
+      hint: 'Review www.evil.example/#123 manually.' }] } };
+  const row = renderJobSummary(report, inputs(env)).split('\n').find(line => line.startsWith('promises /'));
+  assert.ok(row.includes('www&#46;evil.example/&#35;\u200b123.cy.js'));
+  assert.ok(row.includes('www&#46;evil.example/&#35;\u200b123'));
+  assert.doesNotMatch(row, /www\.|#123|\[|<a\b/i);
+  assert.equal(row.split(' | ').length, 4);
+});
+
+test('Markdown path and hint cells keep address and reference triggers inert', t => {
+  const { workspace, env } = fixture(t);
+  for (const [file, hint, expectedFile, expectedHint] of [
+    ['b/user@example.com.cy.js', 'Review user@evil.example', 'b/user&#64;\u200bexample.com.cy.js', 'user&#64;\u200bevil.example'],
+    ['@octocat/x.cy.js', 'Review @octocat', '&#64;\u200boctocat/x.cy.js', '&#64;\u200boctocat'],
+    ['@org/team/x.cy.js', 'Review @org/team', '&#64;\u200borg/team/x.cy.js', '&#64;\u200borg/team'],
+    ['node_modules/@scope/pkg/x.cy.js', 'Review node_modules/@scope/pkg', 'node&#95;modules/&#64;\u200bscope/pkg/x.cy.js', 'node&#95;modules/&#64;\u200bscope/pkg'],
+    ['#123.cy.js', 'Review #123', '&#35;\u200b123.cy.js', '&#35;\u200b123'],
+    ['www.evil.example/p.cy.js', 'Review www.evil.example/p.cy.js', 'www&#46;evil.example/p.cy.js', 'www&#46;evil.example/p.cy.js'],
+    ['normal/path.cy.js', 'mailto:me@ex.com', 'normal/path.cy.js', 'mailto&#58;me&#64;\u200bex.com'],
+  ]) {
+    fs.mkdirSync(path.dirname(path.join(workspace, file)), { recursive: true });
+    fs.writeFileSync(path.join(workspace, file), '');
+    const report = { findings: [], execution: { complete: false, incomplete: ['raw'], exitCode: 2 },
+      incompleteSummary: { total: 1, groups: [{ detector: 'promises', code: 'shape-unsupported', count: 1,
+        topFiles: [{ file: path.join(workspace, file), count: 1 }], hint }] } };
+    const row = renderJobSummary(report, inputs(env)).split('\n').find(line => line.startsWith('promises /'));
+    assert.ok(row.includes(expectedFile), row);
+    assert.ok(row.includes(expectedHint), row);
+    assert.equal(row.split(' | ').length, 4);
+  }
+});
+
+test('scanner-owned import causes retain their file path in the Action table', t => {
+  const { workspace, env } = fixture(t);
+  const file = path.join(workspace, 'helper.ts');
+  fs.writeFileSync(file, '');
+  const report = { findings: [], execution: { complete: false, incomplete: ['raw'], exitCode: 2 },
+    incompleteSummary: { total: 1, groups: [{ detector: 'importSnapshot', code: 'import-parse-invalid', count: 1,
+      topFiles: [{ file, count: 1 }], hint: 'Inspect the imported helper.' }] } };
+  const summary = renderJobSummary(report, inputs(env));
+  assert.match(summary, /^importSnapshot \/ import-parse-invalid \| 1 \| helper\.ts \(1\) \|/m);
+  assert.doesNotMatch(summary, /unrecognized-reason|file paths withheld/);
 });
